@@ -2,7 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.test._
 import controllers.product.ProductResource
-import controllers.user.UserResource
 import domain.models._
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.when
