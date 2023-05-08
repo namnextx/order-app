@@ -9,6 +9,7 @@ import java.time.{LocalDate, LocalDateTime}
 case class UserResource(id: Long,
                         email: String,
                         role: String,
+                        firstName: String,
                         lastName: String,
                         birthDate: LocalDate,
                         address: String,
@@ -22,5 +23,5 @@ object UserResource {
   implicit val format: OFormat[UserResource] = Json.format[UserResource]
 
   def fromUser(user: User): UserResource =
-    UserResource(user.id.getOrElse(-1), user.email, user.role, user.lastName, user.birthDate, user.address, user.phoneNumber)
+    UserResource(user.id.getOrElse(-1), user.email, user.role, user.firstName, user.lastName, user.birthDate, user.address, user.phoneNumber)
 }
