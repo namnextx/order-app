@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  db1:
+    image: postgres:11-alpine
+    container_name: scalademo-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=johnny
+      - POSTGRES_PASSWORD=1234@123
+      - POSTGRES_DB=order_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+volumes:
+  db:
+    driver: local
