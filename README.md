@@ -19,17 +19,23 @@
    │   │   └── auth                                   # Authentication utils
    │   ├── domain
    │   │   ├── tables                                 # Slick tables
-   │   │   │   ├── PostTable.scala                    # Represents posts table
+   │   │   │   ├── OrderDetailTable.scala             # Represents order_details table
    │   │   │   └── UserTable.scala                    # Represents users table
+   │   │   │   └── ProductTable.scala                 # Represents products table
+   │   │   │   └── OrderTable.scala                   # Represents orders table
    │   │   ├── models                                 # Contains UserService with its implementation
-   │   │   │   ├── Post.scala                         # Post model
+   │   │   │   ├── OrderDetails.scala                 # OrderDetail model
+   │   │   │   └── Order.scala                        # Order model
+   │   │   │   └── Product.scala                      # Product model
    │   │   │   └── User.scala                         # User model
    │   │   └── daos
    │   │       ├── DaoRunner.scala                    # Run Slick database actions by transactions
    │   │       ├── DbExecutionContext.scala           # Custom ExecutionContext for running DB connections
    │   │       ├── PasswordInfoDao.scala              # Password dao
-   │   │       ├── PostDao.scala                      # Post dao
-   │   │       └── UserDao.scala                      # User dao
+   │   │       ├── OrderDao.scala                     # Order dao
+   │   │       └── UserDao.scala                      # UserDao dao
+   │   │       └── OrderDetailDao.scala               # OrderDetailDao dao
+   │   │       └── ProductDao.scala                   # ProductDao dao
    │   ├── system                                     # Play modules
    │   │   └── modules
    │   │       ├── AppModule.scala                    # Bind all application components (Same as Spring @Configuration)
@@ -39,11 +45,21 @@
    │       │   ├── AuthController.scala               # SignUp/SignIn controllers
    │       │   ├── SilhouetteController.scala         # Abstract silhouette controller
    │       │   ├── UnsecuredResourceController.scala  # Example of a un-secured endpoint
-   │       └── post                                   
-   │           ├── PostController.scala               # Post controllers for CRUD a post
-   │           ├── PostControllerComponents.scala     # Post Controller components
-   │           ├── PostResource.scala                 # Request/Response Post dto
-   │           └── PostRouter.scala                   # Post endpoints routing
+   │       └── order                                   
+   │       │   ├── OrderController.scala              # Order controllers for CRUD an order
+   │       │   ├── OrderControllerComponents.scala    # Order Controller components
+   │       │   ├── OrderResource.scala                # Request/Response Order dto
+   │       │   └── OrderRouter.scala                  # Order endpoints routing
+   │       └── product                                   
+   │       │   ├── ProductController.scala            # Product controllers for CRUD a Product
+   │       │   ├── ProductControllerComponents.scala  # Product Controller components
+   │       │   ├── ProductResource.scala              # Request/Response Product dto
+   │       │   └── ProductRouter.scala                # Product endpoints routing
+   │       └── user                                   
+   │           ├── UserController.scala               # User controllers for CRUD an User
+   │           ├── UserControllerComponents.scala     # User Controller components
+   │           ├── UserResource.scala                 # Request/Response User dto
+   │           └── UserRouter.scala                   # User endpoints routing
    ├── test
    ├── conf
    │   ├── messages                               # Error Messages for messages API
@@ -94,11 +110,21 @@ or To generate code coverage report with SCoverage
 ### Usage
 _Ref: Postman collection at `postman` folder_
 
-1. Create an User by using `POST /SignUp` endpoint
+1. Create an User with role Admin by using `POST /SignUp` endpoint
 2. You can access the `GET /Unsecured` endpoint without login
 3. Using `POST- /SignIn` endpoint to login with newly created user to get JWT token in `X-Auth` response header
-4. Get All Posts via `GET /v1/posts` endpoint -> empty list returned at first
-5. Create a new Post by using `POST /v1/posts` endpoint
-6. Get All Posts via `GET /v1/posts` endpoint again -> Only one created Post shown
-7. Get single Post via `GET /v1/posts/:id`
-8. Delete existing Post via `DELETE /v1/posts/:id` endpoint
+4. Get All existing users via `GET /v1/users` endpoint -> empty list returned at first (Admin)
+5. Get an existing users via `GET /v1/users/id` endpoint -> empty list returned at first  (Admin)
+6. Delete an existing user via `DELETE /v1/users/id` endpoint (Admin)
+7. Create new user via `POST /v1/users` endpoint (Admin) (Admin)
+8. Create a new Product by using `POST /v1/products` endpoint "Admin", "Operator"
+9. Get All Products via `GET /v1/products` endpoint again -> Only one created Post shown ("Admin", "Operator", "User")
+10. Get single Product via `GET /v1/products/:id` ("Admin", "Operator", "User")
+11. Delete existing Product via `DELETE /v1/products/:id` endpoint ("Admin", "Operator")
+12. Update exiting Product Via `PUT /v1/products/id` endpoint ("Admin", "Operator")
+13. Get external Products Via `GET /v1/external/products` endpoint ("Admin", "Operator")
+14. Create a new Order by using `POST /v1/orders` endpoint "Admin", "User"
+15. Get All Order via `GET /v1/orders` endpoint again -> Only one created Post shown "Admin", "User"
+16. Get single Order via `GET /v1/orders/:id` ("Admin", "Operator", "User")
+17. Delete existing Order via `DELETE /v1/orders/:id` endpoint "Admin", "User"
+18. Update exiting Order Via `PUT /v1/orders/id` endpoint "Admin", "User"
