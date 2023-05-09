@@ -77,44 +77,6 @@ class ExternalProductClientSpec extends PlaySpec with MockitoSugar with ScalaFut
         .withAuth(ArgumentMatchers.eq(username), ArgumentMatchers.eq(password), ArgumentMatchers.eq(WSAuthScheme.BASIC))
       verify(wsRequest, times(1)).withRequestFilter(ArgumentMatchers.any[WSRequestFilter])
     }
-
-    "get an external product bad request" in {
-
-      // Mocking data
-      val expectedException = classOf[ExternalServiceException]
-
-      when(wsRequest.execute()).thenReturn(Future.successful(wsResponse)) // when request is executed, it should return a response
-      when(wsResponse.status).thenReturn(404)
-      when(wsResponse.body[JsValue]).thenReturn(error)
-
-      // Execute test
-      val caughtException = intercept[ExternalServiceException] {
-        httpClient.get[Product](s"${apiPath}")
-      }
-
-      expectedException mustEqual caughtException
-      caughtException.getMessage mustEqual "External Service Exception"
-
-    }
-
-    /*"get an external product bad request" in {
-
-      // Mocking data
-      val expectedException = classOf[ExternalServiceException]
-
-      when(wsRequest.execute()).thenReturn(Future.successful(wsResponse)) // when request is executed, it should return a response
-      when(wsResponse.status).thenReturn(400)
-      when(wsResponse.body[JsValue]).thenReturn(error)
-
-      // Execute test
-      val caughtException = intercept[ExternalServiceException] {
-        httpClient.get[Product](s"${apiPath}")
-      }
-
-      expectedException mustEqual caughtException
-      caughtException.getMessage mustEqual "External Service Exception"
-
-    }*/
   }
 
   private def verifyProduct(actual: Product, expected: Product): Unit = {

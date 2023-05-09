@@ -43,7 +43,6 @@ class UserControllerSpec extends ControllerFixture {
 
       //Mock response data
       val id = 2L
-
       when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
       when(mockUserService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(None))
 
