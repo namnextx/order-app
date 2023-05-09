@@ -82,24 +82,14 @@ class OrderController @Inject() (cc: ControllerComponents,
             case Some(order) =>
               Ok(Json.toJson(OrderResource.fromOrder(order)))
             case None => NotFound
-          }.recover {
-            case ex: Exception =>
-              logger.error(s"Error id $id: ${ex.getMessage}", ex)
-              InternalServerError
           }
         case "User" =>
           orderService.find(id).map {
             case Some(order) if userId == order.userId =>
               Ok(Json.toJson(OrderResource.fromOrder(order)))
             case _ => NotFound
-          }.recover {
-            case ex: Exception =>
-              logger.error(s"Error id $id: ${ex.getMessage}", ex)
-              InternalServerError
           }
-        case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
       }
-
     }
 
   def getAll: Action[AnyContent] =
@@ -117,14 +107,13 @@ class OrderController @Inject() (cc: ControllerComponents,
           orderService.getOrdersByUserId(userId).map { orders =>
             Ok(Json.toJson(orders.map(order => OrderResource.fromOrder(order))))
           }
-        case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
       }
     }
 
   def create(): Action[AnyContent] =
     SecuredAction(WithRole[JWTAuthenticator]("Admin", "User")).async { implicit request =>
       val user:User = request.identity
-      logger.trace("create Post: ")
+      logger.trace("create Order: ")
       this.createOrder(user)
     }
 
@@ -145,21 +134,19 @@ class OrderController @Inject() (cc: ControllerComponents,
       userRole match {
         case "Admin" =>
           orderService.delete(id).map { deletedCnt =>
-          if (deletedCnt == 1) Ok(JsString(s"Delete post $id successfully"))
-          else BadRequest(JsString(s"Unable to delete post $id"))
+          if (deletedCnt == 1) Ok(JsString(s"Delete Order $id successfully"))
+          else BadRequest(JsString(s"Unable to delete Order $id"))
         }
         case "User" =>
           orderService.find(id).flatMap {
             case Some(existingOrder) if userId == existingOrder.userId =>
               orderService.delete(id).map { deletedCnt =>
-                if (deletedCnt == 2) Ok(JsString(s"Delete post $id successfully"))
-                else BadRequest(JsString(s"Unable to delete post $id"))
+                if (deletedCnt == 2) Ok(JsString(s"Delete Order $id successfully"))
+                else BadRequest(JsString(s"Unable to delete Order $id"))
               }
-            case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
+            case _ => Future.successful(Forbidden("You are not authorized to access this resource"))
           }
-        case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
       }
-
     }
 
 
@@ -171,7 +158,7 @@ class OrderController @Inject() (cc: ControllerComponents,
     }
 
     def success(input: OrderFormInputCreate) = {
-      // create a post from given form input
+      // create a Order from given form input
       logger.trace(s"Create new order")
       // create an order
       val newOrder = Order(None, userId = user.id.getOrElse(0L), orderDate = input.orderDate, totalPrice = BigDecimal(0))

@@ -1,6 +1,6 @@
 package controllers.order
 
-import domain.models.{Post, Order}
+import domain.models.Order
 import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDate

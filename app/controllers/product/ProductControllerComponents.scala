@@ -1,14 +1,11 @@
 package controllers.product
 
-import play.api.http.{FileMimeTypes, HttpVerbs}
+import play.api.http.FileMimeTypes
 import play.api.i18n.{Langs, MessagesApi}
 import play.api.mvc._
-import play.api.{Logger, MarkerContext}
-import services.{ExternalPostService, PostService, ProductService, UserService}
-import utils.logging.RequestMarkerContext
+import services.{ProductService, UserService}
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * A wrapped request for post resources.

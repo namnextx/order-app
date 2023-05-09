@@ -107,7 +107,7 @@ class ProductController @Inject() (cc: ControllerComponents,
       // try/catch Future exception with transform
       externalProductService.listAll().transform {
         case Failure(exception) => handleExternalError(exception)
-        case Success(posts) => Try(Ok(Json.toJson(posts.map(product => ProductResource.fromProduct(product)))))
+        case Success(products) => Try(Ok(Json.toJson(products.map(product => ProductResource.fromProduct(product)))))
       }
     }
 
@@ -120,7 +120,7 @@ class ProductController @Inject() (cc: ControllerComponents,
         else Try(BadRequest(Json.toJson(ese.error.get)))
       case _ =>
         logger.trace(s"An other exception occurred on getAllExternal: ${throwable.getMessage}")
-        Try(BadRequest(JsString("Unable to create an external post")))
+        Try(BadRequest(JsString("Unable to create an external product")))
     }
   }
 
@@ -160,7 +160,7 @@ class ProductController @Inject() (cc: ControllerComponents,
               val updateOrder = existingProduct.copy(expDate = input.expDate, price = input.price)
               //save the updated order back to the db
               productService.update(updateOrder).map { _ =>
-                Created(Json.toJson(ProductResource.fromProduct(updateOrder)))
+                Ok(Json.toJson("Product updated successfully"))
               }
             case None =>
               //Return None of the order doesn't exit

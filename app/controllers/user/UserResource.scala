@@ -1,7 +1,6 @@
 package controllers.user
 
-import controllers.post.PostResource
-import domain.models.{Post, User}
+import domain.models.User
 import play.api.libs.json.{Json, OFormat}
 
 import java.time.{LocalDate, LocalDateTime}

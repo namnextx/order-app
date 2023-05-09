@@ -3,24 +3,17 @@ package controllers.user
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredActionBuilder
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
-import controllers.auth.SilhouetteControllerComponents
-import controllers.post.PostFormInput
-import domain.models.{Post, User}
-import exception.ValidationError
-import httpclient.ExternalServiceException
 import play.api.Logger
 import play.api.data.Form
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc._
-import services.{ExternalPostService, PostService, UserService}
+import services.UserService
 import utils.auth.{JWTEnvironment, WithRole}
 import utils.logging.RequestMarkerContext
 
-import java.time.{LocalDate, LocalDateTime}
-import java.util.Optional
+import java.time.LocalDate
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext
 
 case class UserFormInputCreate(email: String,
                                firstName: String,
@@ -33,8 +26,6 @@ case class UserFormInputCreate(email: String,
 
 
 class UserController @Inject() (cc: ControllerComponents,
-                                postService: PostService,
-                                extPostService: ExternalPostService,
                                 userService: UserService,
                                 silhouette: Silhouette[JWTEnvironment])
                                (implicit ec: ExecutionContext) extends AbstractController(cc) with RequestMarkerContext {
