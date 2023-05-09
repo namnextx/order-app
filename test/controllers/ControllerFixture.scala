@@ -14,7 +14,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import services.{ExternalProductService, OrderService, ProductService, UserService}
+import services.{ExternalProductService, OrderDetailService, OrderService, ProductService, UserService}
 import utils.auth.JWTEnvironment
 
 import java.time.LocalDate
@@ -24,6 +24,7 @@ class ControllerFixture extends PlaySpec with Suite with GuiceOneAppPerSuite wit
   val mockUserService: UserService = mock[UserService]
   val mockProductService: ProductService = mock[ProductService]
   val mockOderService: OrderService = mock[OrderService]
+  val mockOderDetailService: OrderDetailService = mock[OrderDetailService]
   val mockExternalProductService: ExternalProductService = mock[ExternalProductService]
   val mockDaoRunner: DaoRunner = mock[DaoRunner]
   val mockUserDao: UserDao = mock[UserDao]
@@ -44,6 +45,7 @@ class ControllerFixture extends PlaySpec with Suite with GuiceOneAppPerSuite wit
       bind[Environment[JWTEnvironment]].toInstance(env)
       bind[UserService].toInstance(mockUserService)
       bind[OrderService].toInstance(mockOderService)
+      bind[OrderDetailService].toInstance(mockOderDetailService)
       bind[ExternalProductService].toInstance(mockExternalProductService)
       bind[ProductService].toInstance(mockProductService)
       bind[DaoRunner].toInstance(mockDaoRunner)

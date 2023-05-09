@@ -65,7 +65,7 @@ class OrderController @Inject() (cc: ControllerComponents,
 
     Form(
       mapping(
-        "orderDate" -> localDate("yyyy-MM-dd")
+        "orderDate" -> localDate("yyyy-MM-dd").verifying(dateInTheFuture)
       )(OrderFormInputUpdate.apply)(OrderFormInputUpdate.unapply)
     )
   }
@@ -113,7 +113,7 @@ class OrderController @Inject() (cc: ControllerComponents,
   def create(): Action[AnyContent] =
     SecuredAction(WithRole[JWTAuthenticator]("Admin", "User")).async { implicit request =>
       val user:User = request.identity
-      logger.trace("create Order: ")
+      logger.trace("create Order")
       this.createOrder(user)
     }
 
@@ -199,7 +199,7 @@ class OrderController @Inject() (cc: ControllerComponents,
   }
 
   private def updateOrder[A](id: Option[Long], user: User)(implicit request: Request[A]): Future[Result] = {
-    logger.trace("getAll Orders")
+    logger.trace("update an Order")
 
     def failure(badForm: Form[OrderFormInputUpdate]) = {
       val errorResponse = ValidationError.generateErrorResponse(badForm)
@@ -221,9 +221,9 @@ class OrderController @Inject() (cc: ControllerComponents,
                   val updateOrder = existingOrder.copy(orderDate = input.orderDate)
                   //save the updated order back to the db
                   orderService.update(updateOrder).map { _ =>
-                    Created(Json.toJson(OrderResource.fromOrder(updateOrder)))
+                    Ok(Json.toJson("Order updated successfully"))
                   }
-                case None =>
+                case _ =>
                   //Return None of the order doesn't exit
                   Future.successful(NotFound(JsString(s"Order with ID ${id} not found")))
               }
@@ -233,11 +233,10 @@ class OrderController @Inject() (cc: ControllerComponents,
                   val updateOrder = existingOrder.copy(orderDate = input.orderDate)
                   //save the updated order back to the db
                   orderService.update(updateOrder).map { _ =>
-                    Created(Json.toJson(OrderResource.fromOrder(updateOrder)))
+                    Ok(Json.toJson("Order updated successfully"))
                   }
-                case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
+                case _ => Future.successful(Forbidden("You are not authorized to access this resource"))
               }
-            case _ => Future.successful(Unauthorized("You are not authorized to access this resource"))
           }
 
         case None =>

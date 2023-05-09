@@ -2,7 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.test._
 import controllers.order.OrderResource
-import controllers.product.ProductResource
 import domain.models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -31,7 +30,7 @@ class OrderControllerSpec extends ControllerFixture {
       when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(Some(order)))
 
       // prepare test request
-      val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/orders/${id}")
+      val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/orders/$id")
         .withHeaders(HOST -> "localhost:8080")
         .withAuthenticator[JWTEnvironment](identity.loginInfo)
 
@@ -55,7 +54,7 @@ class OrderControllerSpec extends ControllerFixture {
       when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(Some(order)))
 
       // prepare test request
-      val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/orders/${id}")
+      val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/orders/$id")
         .withHeaders(HOST -> "localhost:8080")
         .withAuthenticator[JWTEnvironment](identityUser.loginInfo)
 
@@ -266,146 +265,228 @@ class OrderControllerSpec extends ControllerFixture {
     }
 
   }
+
+  "OrderController#create()" should {
+
+    "create an order bad request" in {
+
+      //Mock response data
+      val id = 1L
+      when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+
+      // prepare test request
+      val request = FakeRequest(POST, s"/v1/orders")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identity.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> "2020-10-10",
+          "product[0].productId" -> "1l",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "create a order successfully" in {
+
+      //Mock response data
+      val product1: Product = Product(Some(1L), "Keyboad", LocalDate.now().plusYears(1), BigDecimal.apply(1000))
+      val products: Seq[Product] = Seq(product1)
+      val order: Order = Order(Some(1L), 1L, LocalDate.now().plusDays(5), BigDecimal.apply(1000))
+      val orderDetail: OrderDetail = OrderDetail(Some(1L), Some(1L), Some(1L), 2, BigDecimal.apply(2000))
+      val orderDetails: Seq[OrderDetail] = Seq(orderDetail)
+
+      when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+      when(mockProductService.findAllById(any[Seq[Long]])).thenReturn(Future.successful(products))
+      when(mockOderDetailService.createOrderDetails(any[Seq[OrderDetail]])).thenReturn(Future.successful(orderDetails))
+      when(mockOderService.save(any[Order])).thenReturn(Future.successful(order))
+      when(mockOderService.update(any[Order])).thenReturn(Future.successful(order))
+
+
+      // prepare test request
+      val request = FakeRequest(POST, s"/v1/orders")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identity.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> "2024-10-10",
+          "product[0].productId" -> "1",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual CREATED
+      val resOrder: OrderResource = Json.fromJson[OrderResource](contentAsJson(result)).get
+      verifyOrder(resOrder, order)
+    }
+
+  }
+
+  "OrderController#update()" should {
+
+    "update an order bad request" in {
+
+      //Mock response data
+      val id = 1L
+      when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+
+      // prepare test request
+      val request = FakeRequest(PUT, s"/v1/orders/${id}")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identity.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> LocalDate.now().minusDays(1).toString,
+                "product[0].productId" -> "1",
+                "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "update an order successfully with role Admin" in {
+
+      //Mock response data
+      val id = 1L
+      val order: Order = Order(Some(1L), 1L, LocalDate.now().plusDays(5), BigDecimal.apply(1000))
+
+      when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+      when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(Some(order)))
+      when(mockOderService.update(any[Order])).thenReturn(Future.successful(order))
+
+      // prepare test request
+      val request = FakeRequest(PUT, s"/v1/orders/${id}")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identity.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> LocalDate.now().plusDays(3).toString,
+          "product[0].productId" -> "1",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual OK
+    }
+
+    "update an order successfully not found" in {
+
+      //Mock response data
+      val id = 1L
+
+      when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+      when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(None))
+
+      // prepare test request
+      val request = FakeRequest(PUT, s"/v1/orders/${id}")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identity.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> LocalDate.now().plusDays(3).toString,
+          "product[0].productId" -> "1",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual NOT_FOUND
+    }
+
+    "update an order successfully with role User" in {
+
+      //Mock response data
+      val id = 1L
+      val order: Order = Order(Some(1L), 2L, LocalDate.now().plusDays(5), BigDecimal.apply(1000))
+
+      when(mockUserService.retrieve(identityUser.loginInfo)).thenReturn(Future.successful(Some(identityUser)))
+      when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(Some(order)))
+      when(mockOderService.update(any[Order])).thenReturn(Future.successful(order))
+
+      // prepare test request
+      val request = FakeRequest(PUT, s"/v1/orders/${id}")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identityUser.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> LocalDate.now().plusDays(3).toString,
+          "product[0].productId" -> "1",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual OK
+    }
+
+    "update an order successfully with role User but not owner" in {
+
+      //Mock response data
+      val id = 1L
+      val order: Order = Order(Some(1L), 1L, LocalDate.now().plusDays(5), BigDecimal.apply(1000))
+
+      when(mockUserService.retrieve(identityUser.loginInfo)).thenReturn(Future.successful(Some(identityUser)))
+      when(mockOderService.find(ArgumentMatchers.eq(id))).thenReturn(Future.successful(Some(order)))
+      when(mockOderService.update(any[Order])).thenReturn(Future.successful(order))
+
+      // prepare test request
+      val request = FakeRequest(PUT, s"/v1/orders/${id}")
+        .withHeaders(HOST -> "localhost:8080")
+        .withAuthenticator[JWTEnvironment](identityUser.loginInfo)
+        .withFormUrlEncodedBody(
+          "orderDate" -> LocalDate.now().plusDays(3).toString,
+          "product[0].productId" -> "1",
+          "product[0].quantities" -> "2",
+        )
+
+      // Execute test and then extract result
+      val result: Future[Result] = route(app, request).get
+
+      // verify result after test
+      status(result) mustEqual FORBIDDEN
+    }
+
+  }
   /*
-     "ProductController#create()" should {
+       "ProductController#getAllExternal()" should {
 
-       "create a product bad request" in {
+         "get all product successfully" in {
 
-         //Mock response data
-         val id = 1L
-         when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+           //Mock response data
+           val product1: Product = Product(Some(1L), "Keyboad", LocalDate.now().plusYears(1), BigDecimal.apply(1000))
+           val products: Iterable[Product] = List(product1)
 
-         val formData = Map(
-           "productName" -> Seq("Macbook"),
-           "expDate" -> Seq(LocalDate.now().minusDays(1)),
-         "price" -> Seq("9.99")
-         )
+           when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
+           when(mockExternalProductService.listAll()).thenReturn(Future.successful(products))
 
-         // prepare test request
-         val request = FakeRequest(POST, s"/v1/products")
-           .withHeaders(HOST -> "localhost:8080")
-           .withAuthenticator[JWTEnvironment](identity.loginInfo)
-           .withFormUrlEncodedBody(
-             "productName" -> "Macbook",
-             "expDate" -> LocalDate.now().minusDays(1).toString,
-             "price" -> "9.99"
-           )
+           // prepare test request
+           val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/external/products")
+             .withHeaders(HOST -> "localhost:8080")
+             .withAuthenticator[JWTEnvironment](identity.loginInfo)
 
-         // Execute test and then extract result
-         val result: Future[Result] = route(app, request).get
+           // Execute test and then extract result
+           val result: Future[Result] = route(app, request).get
 
-         // verify result after test
-         status(result) mustEqual BAD_REQUEST
-       }
+           // verify result after test
+           status(result) mustEqual OK
+           val productsResult: Seq[ProductResource] = Json.fromJson[List[ProductResource]](contentAsJson(result)).get
+           verifyProduct(productsResult.head, product1)
+         }
 
-       "create a product successfully" in {
-
-         //Mock response data
-
-         val product: Product = Product(Some(1L), "Macbook", LocalDate.now().plusDays(3), BigDecimal.apply(9.99))
-         when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
-         when(mockProductService.save(any[Product])).thenReturn(Future.successful(product))
-
-
-         // prepare test request
-         val request = FakeRequest(POST, s"/v1/products")
-           .withHeaders(HOST -> "localhost:8080")
-           .withAuthenticator[JWTEnvironment](identity.loginInfo)
-           .withFormUrlEncodedBody(
-             "productName" -> "Macbook",
-             "expDate" -> LocalDate.now().plusDays(3).toString,
-             "price" -> "9.99"
-           )
-
-         // Execute test and then extract result
-         val result: Future[Result] = route(app, request).get
-
-         // verify result after test
-         status(result) mustEqual CREATED
-         val resProduct: ProductResource = Json.fromJson[ProductResource](contentAsJson(result)).get
-         verifyProduct(resProduct,product)
-       }
-
-     }
-
-     "ProductController#update()" should {
-
-       "update a product bad request" in {
-
-         //Mock response data
-         val id = 1L
-         when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
-
-         // prepare test request
-         val request = FakeRequest(PUT, s"/v1/products/${id}")
-           .withHeaders(HOST -> "localhost:8080")
-           .withAuthenticator[JWTEnvironment](identity.loginInfo)
-           .withFormUrlEncodedBody(
-             "expDate" -> LocalDate.now().minusDays(1).toString,
-                   "price" -> "9.99"
-           )
-
-         // Execute test and then extract result
-         val result: Future[Result] = route(app, request).get
-
-         // verify result after test
-         status(result) mustEqual BAD_REQUEST
-       }
-
-       "update a product successfully" in {
-
-         //Mock response data
-         val id = 1L
-         val product: Product = Product(Some(1L), "Macbook", LocalDate.now().plusDays(3), BigDecimal.apply(9.99))
-         when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
-         when(mockProductService.find(any[Long])).thenReturn(Future.successful(Some(product)))
-         when(mockProductService.update(any[Product])).thenReturn(Future.successful(product))
-
-
-         // prepare test request
-         val request = FakeRequest(PUT, s"/v1/products/${id}")
-           .withHeaders(HOST -> "localhost:8080")
-           .withAuthenticator[JWTEnvironment](identity.loginInfo)
-           .withFormUrlEncodedBody(
-             "expDate" -> LocalDate.now().plusDays(3).toString,
-                   "price" -> "9.99"
-           )
-
-         // Execute test and then extract result
-         val result: Future[Result] = route(app, request).get
-
-         // verify result after test
-         status(result) mustEqual OK
-       }
-
-     }
-
-     "ProductController#getAllExternal()" should {
-
-       "get all product successfully" in {
-
-         //Mock response data
-         val product1: Product = Product(Some(1L), "Keyboad", LocalDate.now().plusYears(1), BigDecimal.apply(1000))
-         val products: Iterable[Product] = List(product1)
-
-         when(mockUserService.retrieve(identity.loginInfo)).thenReturn(Future.successful(Some(identity)))
-         when(mockExternalProductService.listAll()).thenReturn(Future.successful(products))
-
-         // prepare test request
-         val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/v1/external/products")
-           .withHeaders(HOST -> "localhost:8080")
-           .withAuthenticator[JWTEnvironment](identity.loginInfo)
-
-         // Execute test and then extract result
-         val result: Future[Result] = route(app, request).get
-
-         // verify result after test
-         status(result) mustEqual OK
-         val productsResult: Seq[ProductResource] = Json.fromJson[List[ProductResource]](contentAsJson(result)).get
-         verifyProduct(productsResult.head, product1)
-       }
-
-     }*/
+       }*/
 
   private def verifyOrder(actual: OrderResource, expected: Order): Unit = {
     actual.id mustEqual expected.id.get
