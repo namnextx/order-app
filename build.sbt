@@ -1,6 +1,6 @@
 import com.typesafe.sbt.packager.docker.{Cmd, ExecCmd}
 import sbt.Keys._
-import scoverage.ScoverageKeys._
+import scoverage.ScoverageKeys.{coverageExcludedFiles, _}
 
 
 ThisBuild / version := "1.0-SNAPSHOT"
@@ -29,7 +29,7 @@ lazy val root = (project in file("."))
     name := "order-application",
     libraryDependencies ++= (appDependencies ++ testDependencies).map(excludeBadTransitiveDependencies),
     PlayKeys.devSettings := Seq("play.server.http.port" -> "8080"),
-    coverageExcludedPackages += "controllers.aut.*"
+    coverageExcludedPackages += "controllers\\.aut.*;utils\\.auth.*;domain.*; system.*",
   )
 
 // Separated project for running integration test

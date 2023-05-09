@@ -13,7 +13,7 @@
 
 ### Project Structure
 ```
-── scala-demo
+── scala-application
    ├── app                                            # The Scala application source code
    │   ├── utils
    │   │   └── auth                                   # Authentication utils

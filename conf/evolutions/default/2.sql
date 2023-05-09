@@ -12,7 +12,7 @@ create table order_v1.users
     role                    varchar(16)  not null,
     birth_date              DATE         not null,
     address                 VARCHAR(64)  not null,
-    phone_number            VARCHAR(20) not null
+    phone_number            VARCHAR(20)  not null
 );
 
 create unique index users_id_uindex
@@ -20,20 +20,6 @@ create unique index users_id_uindex
 
 create unique index users_email_uindex
     on order_v1.users (email);
-
-create table order_v1.posts
-(
-	id              serial          not null constraint posts_pk primary key,
-	author          serial          not null,
-	title           varchar(128)    not null,
-	description     varchar(500),
-	content         text            not null,
-	date            timestamp       not null
-);
-
-create unique index posts_id_uindex
-    on order_v1.posts (id);
-
 
 create table order_v1.orders
 (
@@ -49,7 +35,8 @@ create table order_v1.products
     id              serial not null constraint products_pk primary key,
     product_name    VARCHAR(64)    not null,
     exp_date        DATE           not null,
-    price           DECIMAL(22, 4) NOT NULL
+    price           DECIMAL(22, 4) NOT NULL,
+    CONSTRAINT channels_product_name_unique UNIQUE (product_name)
 );
 
 create table order_v1.order_details
@@ -66,7 +53,6 @@ create table order_v1.order_details
 -- !Downs
 
 DROP TABLE order_v1.users;
-DROP TABLE order_v1.posts;
 DROP TABLE order_v1.orders;
 DROP TABLE order_v1.products;
 DROP TABLE order_v1.order_details;

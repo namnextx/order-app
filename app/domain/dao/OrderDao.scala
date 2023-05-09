@@ -2,6 +2,7 @@ package domain.dao
 
 import com.google.inject.{ImplementedBy, Inject, Singleton}
 import domain.models.Order
+import domain.models.dto.OrderWithDetails
 import domain.tables.{OrderDetailTable, OrderTable}
 import slick.jdbc.PostgresProfile.api._
 
@@ -16,6 +17,14 @@ trait OrderDao {
    * @return The found post or None if no post for the given id could be found.
    */
   def find(id: Long): Future[Option[Order]]
+
+  /**
+   * Finds a post by id.
+   *
+   * @param id The post id to find.
+   * @return The found post or None if no post for the given id could be found.
+   */
+  def findDetail(id: Long): Future[Option[OrderWithDetails]]
 
   /**
    * List all orders.
@@ -64,6 +73,26 @@ class OrderDaoImpl @Inject()(daoRunner: DaoRunner)(implicit ec: DbExecutionConte
 
   override def find(id: Long): Future[Option[Order]] = daoRunner.run {
     orders.filter(_.id === id).result.headOption
+  }
+
+  override def findDetail(id: Long): Future[Option[OrderWithDetails]] =  {
+    val query = for {
+      (order, orderDetails) <- orders.filter(_.id === id) join orderDetails on (_.id === _.orderId)
+    } yield (order, orderDetails)
+
+    val dbioResult: DBIO[Option[OrderWithDetails]] = query.result.headOption.map {
+      case Some((order, orderDetails)) =>
+        val orderWithOrderDetails = OrderWithDetails(order.id,
+          order.userId,
+          order.orderDate,
+          order.totalPrice,
+          Seq(orderDetails))
+        Some(orderWithOrderDetails)
+      case None =>
+        None
+    }
+
+    daoRunner.run(dbioResult)
   }
 
   override def listAll(): Future[Iterable[Order]] = daoRunner.run {

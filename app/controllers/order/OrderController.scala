@@ -18,6 +18,7 @@ import play.api.data.Forms._
 
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.transaction.Transactional
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -78,15 +79,15 @@ class OrderController @Inject() (cc: ControllerComponents,
 
       userRole match {
         case "Admin" =>
-          orderService.find(id).map {
-            case Some(order) =>
-              Ok(Json.toJson(OrderResource.fromOrder(order)))
+          orderService.findDetail(id).map {
+            case Some(orderWithOrderDetails) =>
+              Ok(Json.toJson(orderWithOrderDetails))
             case None => NotFound
           }
         case "User" =>
-          orderService.find(id).map {
-            case Some(order) if userId == order.userId =>
-              Ok(Json.toJson(OrderResource.fromOrder(order)))
+          orderService.findDetail(id).map {
+            case Some(orderWithOrderDetails) if userId == orderWithOrderDetails.userId =>
+              Ok(Json.toJson(orderWithOrderDetails))
             case _ => NotFound
           }
       }
@@ -160,11 +161,9 @@ class OrderController @Inject() (cc: ControllerComponents,
     def success(input: OrderFormInputCreate) = {
       // create a Order from given form input
       logger.trace(s"Create new order")
-      // create an order
+
       val newOrder = Order(None, userId = user.id.getOrElse(0L), orderDate = input.orderDate, totalPrice = BigDecimal(0))
 
-      // save order
-      val savedOrderFuture = orderService.save(newOrder)
       // Find all product
       val productQuantities: Map[Long, Int] = input.products.map(productFormCreate =>
         productFormCreate.productId -> productFormCreate.quantities).toMap
@@ -172,27 +171,41 @@ class OrderController @Inject() (cc: ControllerComponents,
       val productIds = productQuantities.keys.toSeq
       val productsFuture = productService.findAllById(productIds)
 
-      // Combine the saved order and retrieved products
-      for {
-        savedOrder <- savedOrderFuture
-        products <- productsFuture
+      productsFuture.flatMap { products =>
+        val existingProductIds = products.flatMap(_.id)
+        val missingProductIds = productIds.filterNot(existingProductIds.contains)
 
-        orderDetails = products.flatMap( product => {
-          productQuantities.get(product.id.getOrElse(0L)).map(quantity => {
-            val price: BigDecimal = product.price * BigDecimal(quantity)
-            OrderDetail(None, savedOrder.id, product.id, quantity, price)
-          })
-        })
+        if (missingProductIds.isEmpty) {
+          val savedOrderFuture = orderService.save(newOrder)
 
-        savedDetails <- orderDetailService.createOrderDetails(orderDetails)
-        totalPrice = savedDetails.map(_.price).sum
-        updatedOrder = savedOrder.copy(totalPrice = totalPrice)
+          for {
+            savedOrder <- savedOrderFuture
 
-        _ <- orderService.update(updatedOrder)
-      } yield {
-        logger.trace(s"order created $updatedOrder")
-        Created(Json.toJson(OrderResource.fromOrder(updatedOrder)))
+            orderDetails = products.flatMap( product => {
+              productQuantities.get(product.id.getOrElse(0L)).map(quantity => {
+                val price: BigDecimal = product.price * BigDecimal(quantity)
+                OrderDetail(None, savedOrder.id, product.id, quantity, price)
+              })
+            })
+
+            savedDetails <- orderDetailService.createOrderDetails(orderDetails)
+            totalPrice = savedDetails.map(_.price).sum
+            updatedOrder = savedOrder.copy(totalPrice = totalPrice)
+
+            _ <- orderService.update(updatedOrder)
+          } yield {
+            logger.trace(s"order created $updatedOrder")
+            Created(Json.toJson(OrderResource.fromOrder(updatedOrder)))
+          }
+        } else {
+          val errorResponse = s"Products with IDs ${missingProductIds.mkString(", ")} do not exist."
+          Future.successful(BadRequest(errorResponse))
+        }
+
       }
+
+      // Combine the saved order and retrieved products
+
     }
 
     form.bindFromRequest().fold(failure, success)

@@ -3,6 +3,7 @@ package services
 import com.google.inject.{ImplementedBy, Inject, Singleton}
 import domain.dao.OrderDao
 import domain.models.Order
+import domain.models.dto.OrderWithDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,6 +16,9 @@ trait OrderService {
    * @return The found Orders or None if no Orders for the given id could be found.
    */
   def find(id: Long): Future[Option[Order]]
+
+
+  def findDetail(id: Long): Future[Option[OrderWithDetails]]
 
   /**
    * List all Orders.
@@ -58,6 +62,8 @@ trait OrderService {
 @Singleton
 class OrderServiceImpl @Inject()(orderDao: OrderDao)(implicit ex: ExecutionContext) extends OrderService {
   override def find(id: Long): Future[Option[Order]] = orderDao.find(id)
+
+  override def findDetail(id: Long): Future[Option[OrderWithDetails]] = orderDao.findDetail(id)
 
   override def listAll(): Future[Iterable[Order]] = orderDao.listAll()
 
